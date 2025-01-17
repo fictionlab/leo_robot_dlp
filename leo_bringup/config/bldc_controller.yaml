@@ -1,0 +1,24 @@
+motor_controller:
+  motor_ID_RR: 60
+  motor_ID_RL: 61
+  motos_ID_FR: 13
+  motos_ID_FL: 63
+  pid: { p: 0.01, i: 0.25, d: 0.0 }
+  max_torque: 1.5
+  mecanum_wheels: true
+  update_period: 10.0
+  max_angular_velocity: 4.8
+  max_linear_velocity: 1.6
+
+  diff_drive:
+    wheel_radius: 0.0625
+    wheel_separation: 0.358
+    angular_velocity_multiplier: 1.76
+    input_timeout: 500
+
+  mecanum_drive:
+    wheel_radius: 0.0635
+    wheel_separation: 0.37
+    wheel_base: 0.3052
+    angular_velocity_multiplier: 1.0
+    input_timeout: 500
