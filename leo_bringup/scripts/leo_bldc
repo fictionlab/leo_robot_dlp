@@ -1,0 +1,278 @@
+#!/usr/bin/env python
+
+import rospy
+import pyCandle
+
+from math import cos, sin
+from geometry_msgs.msg import Twist
+from std_msgs.msg import String
+from leo_msgs.msg import WheelStates, WheelOdom, WheelOdomMecanum
+from std_srvs.srv import Trigger, TriggerResponse
+
+PI = 3.14159
+
+
+def init_motor(motor_id):
+    candle.addMd80(motor_id)
+    candle.controlMd80SetEncoderZero(motor_id)
+    candle.controlMd80Mode(motor_id, pyCandle.VELOCITY_PID)
+    candle.controlMd80Enable(motor_id, True)
+
+
+def init():
+
+    ids = candle.ping()
+    init_motor(motorRL)
+    init_motor(motorRR)
+    init_motor(motorFL)
+    init_motor(motorFR)
+
+    candle.begin()
+
+    for md in candle.md80s:
+        md.setVelocityControllerParams(pid["p"], pid["i"], pid["d"], 1.0)
+        md.setTargetVelocity(0)
+        md.setMaxTorque(max_torque)
+
+
+def cmd_vel_Callback(x):
+
+    if x.linear.x > max_linear_velocity and x.linear.x > 0:
+        x.linear.x = max_linear_velocity
+    elif x.linear.x < -max_linear_velocity and x.linear.x < 0:
+        x.linear.x = -max_linear_velocity
+
+    if x.linear.y > max_linear_velocity and x.linear.y > 0:
+        x.linear.y = max_linear_velocity
+    elif x.linear.y < -max_linear_velocity and x.linear.y < 0:
+        x.linear.y = -max_linear_velocity
+        
+    if x.angular.z > max_angular_velocity and x.angular.z > 0:
+        x.angular.z = max_angular_velocity
+    elif x.angular.z < -max_angular_velocity and x.angular.z < 0:
+        x.angular.z = -max_angular_velocity
+
+    if is_mecannum_wheels:
+        angular_multiplied = x.angular.z * wheel_geometry * angular_velocity_multiplier
+        sum_xy = x.linear.x + x.linear.y
+        diff_xy = x.linear.x - x.linear.y
+
+        wheel_RL_vel = (sum_xy - angular_multiplied) / wheel_radius
+        wheel_RR_vel = (diff_xy + angular_multiplied) / wheel_radius
+        wheel_FL_vel = (diff_xy - angular_multiplied) / wheel_radius
+        wheel_FR_vel = (sum_xy + angular_multiplied) / wheel_radius
+    else:
+        angular_multiplied = x.angular.z * angular_velocity_multiplier
+
+        wheel_L_linear_vel = x.linear.x - (angular_multiplied * wheel_separation / 2.0)
+        wheel_R_linear_vel = x.linear.x + (angular_multiplied * wheel_separation / 2.0)
+
+        wheel_RL_vel, wheel_FL_vel = wheel_L_linear_vel / wheel_radius
+        wheel_FR_vel, wheel_FL_vel = wheel_R_linear_vel / wheel_radius
+
+    for md in candle.md80s:
+        if md.getId() == motorFL:
+            md.setTargetVelocity(wheel_FL_vel)
+
+        elif md.getId() == motorRL:
+            md.setTargetVelocity(wheel_RL_vel)
+
+        elif md.getId() == motorFR:
+            md.setTargetVelocity(-wheel_FR_vel)
+
+        elif md.getId() == motorRR:
+            md.setTargetVelocity(-wheel_RR_vel)
+
+
+def update(event):
+    global pose_yaw, pose_x, pose_y
+
+    position = [0] * 4
+    velocity = [0] * 4
+    torque = [0] * 4
+
+    for md in candle.md80s:
+        if md.getId() == motorFL:
+            position[0] = md.getPosition()
+            velocity[0] = md.getVelocity()
+            torque[0] = md.getTorque()
+
+        elif md.getId() == motorRL:
+            position[1] = md.getPosition()
+            velocity[1] = md.getVelocity()
+            torque[1] = md.getTorque()
+
+        elif md.getId() == motorFR:
+            position[2] = md.getPosition()
+            velocity[2] = md.getVelocity()
+            torque[2] = md.getTorque()
+
+        elif md.getId() == motorRR:
+            position[3] = md.getPosition()
+            velocity[3] = md.getVelocity()
+            torque[3] = md.getTorque()
+
+    wheel_states = WheelStates()
+    wheel_states.stamp = rospy.Time.now()
+    wheel_states.position = position
+    wheel_states.velocity = velocity
+    wheel_states.torque = torque
+    wheel_states_pub.publish(wheel_states)
+
+    if is_mecannum_wheels:
+        wheel_odom = WheelOdomMecanum()
+
+        linear_vel_x = (
+            (velocity[0] + velocity[1] + velocity[2] + velocity[3]) * wheel_radius
+        ) / 4.0
+        linear_vel_y = (
+            (-velocity[0] + velocity[1] + velocity[2] - velocity[3]) * wheel_radius
+        ) / 4.0
+
+        angular_vel = (
+            (-velocity[0] + velocity[1] - velocity[2] + velocity[3])
+            * wheel_radius
+            * angular_velocity_multiplier
+        ) / (4.0 * wheel_geometry)
+
+        x_move = linear_vel_x * cos(pose_yaw) - linear_vel_y * sin(pose_yaw)
+        y_move = linear_vel_x * sin(pose_yaw) + linear_vel_y * cos(pose_yaw)
+
+        pose_x += x_move * dt_s
+        pose_y += y_move * dt_s
+
+        pose_yaw += angular_vel * dt_s
+        if pose_yaw > 2 * PI:
+            pose_yaw -= 2 * PI
+        elif pose_yaw < 0:
+            pose_yaw += 2 * PI
+
+        wheel_odom.stamp = rospy.Time.now()
+        wheel_odom.velocity_lin_x = linear_vel_x
+        wheel_odom.velocity_lin_y = linear_vel_y
+        wheel_odom.pose_x = pose_x
+        wheel_odom.pose_y = pose_y
+        wheel_odom.pose_yaw = pose_yaw
+
+        wheel_odom_pub.publish(wheel_odom)
+
+    else:
+        wheel_odom = WheelOdom()
+
+        L_ang_vel = velocity[0] + velocity[1] / 2.0
+        R_ang_vel = velocity[2] + velocity[3] / 2.0
+
+        L_liner_vel = L_ang_vel * wheel_radius
+        R_liner_vel = R_ang_vel * wheel_radius
+
+        velocity_lin = L_liner_vel + R_liner_vel / 2.0
+        velocity_ang = (
+            (R_liner_vel - L_liner_vel) / wheel_separation
+        ) / angular_velocity_multiplier
+
+        pose_yaw += velocity_ang * dt_s
+        if pose_yaw > 2 * PI:
+            pose_yaw -= 2 * PI
+        elif pose_yaw < 0:
+            pose_yaw += 2 * PI
+
+        pose_x += velocity_lin * cos(pose_yaw) * dt_s
+        pose_y += velocity_lin * sin(pose_yaw) * dt_s
+
+        wheel_odom.stamp = rospy.Time.now()
+        wheel_odom.velocity_lin = velocity_lin
+        wheel_odom.velocity_ang = velocity_ang
+        wheel_odom.pose_x = pose_x
+        wheel_odom.pose_y = pose_y
+        wheel_odom.pose_yaw = pose_yaw
+
+        wheel_odom_pub.publish(wheel_odom)
+
+def reset_odom(req):
+    global pose_yaw, pose_x, pose_y
+
+    rospy.loginfo("Reset odom service was called!")
+
+    pose_yaw = 0.0
+    pose_x = 0.0
+    pose_y = 0.0
+    success = True
+    return TriggerResponse(success, "ok")
+
+try:
+    candle = pyCandle.Candle(pyCandle.CAN_BAUD_1M, True, pyCandle.SPI)
+
+    rospy.init_node("leo_bldc_node")
+
+    pose_yaw = 0.0
+    pose_x = 0.0
+    pose_y = 0.0
+
+    update_period = rospy.get_param("~motor_controller/update_period", 10.0)
+    dt_ms = update_period
+    dt_s = dt_ms / 1000.0
+
+    motorRR = rospy.get_param("~motor_controller/motor_ID_RR", 60)
+    motorRL = rospy.get_param("~motor_controller/motor_ID_RL", 63)
+    motorFR = rospy.get_param("~motor_controller/motor_ID_FR", 13)
+    motorFL = rospy.get_param("~motor_controller/motor_ID_FL", 61)
+
+    is_mecannum_wheels = rospy.get_param("~motor_controller/mecannum_wheels", True)
+    max_torque = rospy.get_param("~motor_controller/max_torque", 1.5)
+    max_linear_velocity = rospy.get_param("~motor_controller/max_linear_velocity", 0.4)
+    max_angular_velocity = rospy.get_param(
+        "~motor_controller/max_angular_velocity", 1.2
+    )
+
+    pid = rospy.get_param("~motor_controller/pid", {"p": 0.01, "i": 0.25, "d": 0.0})
+
+    if is_mecannum_wheels:
+        wheel_radius = rospy.get_param(
+            "~motor_controller/mecanum_drive/wheel_radius", 0.0625
+        )
+        wheel_separation = rospy.get_param(
+            "~motor_controller/mecanum_drive/wheel_separation", 0.358
+        )
+        angular_velocity_multiplier = rospy.get_param(
+            "~motor_controller/mecanum_drive/angular_velocity_multiplier", 1.76
+        )
+        wheel_base = rospy.get_param(
+            "~motor_controller/mecanum_drive/wheel_base", 0.3052
+        )
+        wheel_geometry = (wheel_base / wheel_separation) / 2.0
+    else:
+        wheel_radius = rospy.get_param(
+            "~motor_controller/diff_drive/wheel_radius", 0.0625
+        )
+        wheel_separation = rospy.get_param(
+            "~motor_controller/diff_drive/wheel_separation", 0.358
+        )
+        angular_velocity_multiplier = rospy.get_param(
+            "~motor_controller/diff_drive/angular_velocity_multiplier", 1.76
+        )
+
+    cmd_vel_sub = rospy.Subscriber("cmd_vel", Twist, cmd_vel_Callback)
+
+    wheel_states_pub = rospy.Publisher("wheel_states", WheelStates, queue_size=10)
+    if is_mecannum_wheels:
+        wheel_odom_pub = rospy.Publisher(
+            "wheel_odom_mecanum", WheelOdomMecanum, queue_size=10
+        )
+    else:
+        wheel_odom_pub = rospy.Publisher("wheel_odom", WheelOdom, queue_size=10)
+
+    # # service to reset odometry
+    reset_odom_srv = rospy.Service("reset_odometry", Trigger, reset_odom)
+
+    # candle.controlMd80SetEncoderZero(ids[0])
+    init()
+
+    rospy.loginfo("leo_bldc node started!")
+
+except rospy.ROSInterruptException as e:
+    rospy.logerr(e)
+
+
+rospy.Timer(rospy.Duration(0, update_period), update)
+
+rospy.spin()
