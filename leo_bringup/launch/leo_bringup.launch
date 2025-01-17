@@ -4,10 +4,12 @@
   <arg name="mecanum_wheels" default="false"/> 
   <arg name="tf_frame_prefix" default=""/>
 
-  <rosparam command="load" file="$(find leo_bringup)/config/firmware.yaml"/>
+  <rosparam command="load" file="$(find leo_bringup)/config/bldc_controller.yaml"/>
   <group if="$(arg mecanum_wheels)">
-    <param name="firmware/mecanum_wheels" value="true"/>
+    <param name="motor_controller/mecanum_wheels" value="true"/>
   </group> 
+
+  <rosparam command="load" file="$(find leo_bringup)/config/firmware.yaml"/>
     
   <param if="$(arg upload_description)"
          name="robot_description" 
@@ -41,17 +43,21 @@
     <param name="baud" value="250000"/>
   </node>
 
-  <node name="firmware_message_converter"
+  <!-- <node name="firmware_message_converter"
         pkg="leo_fw"
         type="firmware_message_converter">
     <rosparam command="load" 
               file="$(find leo_bringup)/config/firmware_message_converter.yaml"/>
     <param name="tf_frame_prefix" value="$(arg tf_frame_prefix)"/>
-  </node>
+  </node> -->
 
   <node name="leo_system"
         pkg="leo_bringup"
         type="leo_system"/>
+
+  <node name="leo_bldc"
+        pkg="leo_bringup"
+        type="leo_bldc"/>
 
   <node type="raspicam_node"
         pkg="raspicam_node"
