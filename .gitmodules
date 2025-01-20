@@ -1,0 +1,3 @@
+[submodule "leo_bringup/pyCANdle"]
+	path = leo_bringup/pyCANdle
+	url = https://github.com/mabrobotics/pyCANdle.git
