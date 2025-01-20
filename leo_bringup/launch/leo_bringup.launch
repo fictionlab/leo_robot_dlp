@@ -43,13 +43,17 @@
     <param name="baud" value="250000"/>
   </node>
 
-  <!-- <node name="firmware_message_converter"
+  <node name="firmware_message_converter"
         pkg="leo_fw"
         type="firmware_message_converter">
     <rosparam command="load" 
               file="$(find leo_bringup)/config/firmware_message_converter.yaml"/>
     <param name="tf_frame_prefix" value="$(arg tf_frame_prefix)"/>
-  </node> -->
+    <remap from="firmware/wheel_odom_mecanum" to="wheel_odom_mecanum"/>
+    <remap from="firmware/wheel_odom" to="wheel_odom"/>
+    <remap from="firmware/wheel_states" to="wheel_states"/>
+    <remap from="firmware/reset_odometry" to="reset_odometry"/>
+  </node>
 
   <node name="leo_system"
         pkg="leo_bringup"
@@ -57,7 +61,10 @@
 
   <node name="leo_bldc"
         pkg="leo_bringup"
-        type="leo_bldc"/>
+        type="leo_bldc"
+        output="screen">
+    <rosparam command="load" file="$(find leo_bringup)/config/bldc_controller.yaml"/>
+  </node>
 
   <node type="raspicam_node"
         pkg="raspicam_node"
