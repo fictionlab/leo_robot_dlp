@@ -19,5 +19,3 @@ catkin_install_python(
     scripts/leo_bldc
   DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION}
 )
-
-add_subdirectory(pyCANdle)
