@@ -51,7 +51,7 @@ def cmd_vel_callback(msg):
     elif msg.angular.z < -max_angular_velocity:
         msg.angular.z = -max_angular_velocity
 
-    if is_mecannum_wheels:
+    if is_mecanum_wheels:
         angular_multiplied = msg.angular.z * wheel_geometry * angular_velocity_multiplier
         sum_xy = msg.linear.x + msg.linear.y
         diff_xy = msg.linear.x - msg.linear.y
@@ -66,8 +66,8 @@ def cmd_vel_callback(msg):
         wheel_l_linear_vel = msg.linear.x - (angular_multiplied * wheel_separation / 2.0)
         wheel_r_linear_vel = msg.linear.x + (angular_multiplied * wheel_separation / 2.0)
 
-        wheel_rl_vel, wheel_fl_vel = wheel_l_linear_vel / wheel_radius
-        wheel_fr_vel, wheel_rr_vel = wheel_r_linear_vel / wheel_radius
+        wheel_rl_vel = wheel_fl_vel = wheel_l_linear_vel / wheel_radius
+        wheel_fr_vel = wheel_rr_vel = wheel_r_linear_vel / wheel_radius
 
     for motor in candle.md80s:
         if motor.getId() == motorFL:
@@ -118,7 +118,7 @@ def update(event):
     wheel_states.torque = torque
     wheel_states_pub.publish(wheel_states)
 
-    if is_mecannum_wheels:
+    if is_mecanum_wheels:
         wheel_odom = WheelOdomMecanum()
 
         linear_vel_x = (
@@ -210,62 +210,63 @@ try:
     pose_x = 0.0
     pose_y = 0.0
 
-    update_period = rospy.get_param("~motor_controller/update_period", 10.0)
+    update_period = rospy.get_param("~update_period", 10.0)
     dt_ms = update_period
     dt_s = dt_ms / 1000.0
 
-    motorRR = rospy.get_param("~motor_controller/motor_ID_RR", 60)
-    motorRL = rospy.get_param("~motor_controller/motor_ID_RL", 63)
-    motorFR = rospy.get_param("~motor_controller/motor_ID_FR", 62)
-    motorFL = rospy.get_param("~motor_controller/motor_ID_FL", 61)
+    motorRR = rospy.get_param("~motor_ID_RR", 60)
+    motorRL = rospy.get_param("~motor_ID_RL", 63)
+    motorFR = rospy.get_param("~motor_ID_FR", 62)
+    motorFL = rospy.get_param("~motor_ID_FL", 61)
 
-    is_mecannum_wheels = rospy.get_param("~motor_controller/mecannum_wheels", True)
-    max_torque = rospy.get_param("~motor_controller/max_torque", 1.5)
-    max_linear_velocity = rospy.get_param("~motor_controller/max_linear_velocity", 1.2)
+    is_mecanum_wheels = rospy.get_param("~mecanum_wheels", True)
+    print(is_mecanum_wheels)
+    max_torque = rospy.get_param("~max_torque", 1.5)
+    max_linear_velocity = rospy.get_param("~max_linear_velocity", 1.2)
     max_angular_velocity = rospy.get_param(
-        "~motor_controller/max_angular_velocity", 1.0
+        "~max_angular_velocity", 1.0
     )
 
-    pid = rospy.get_param("~motor_controller/pid", {"p": 0.01, "i": 0.25, "d": 0.0})
+    pid = rospy.get_param("~pid", {"p": 0.01, "i": 0.25, "d": 0.0})
     print(pid)
 
-    if is_mecannum_wheels:
+    if is_mecanum_wheels:
         wheel_radius = rospy.get_param(
-            "~motor_controller/mecanum_drive/wheel_radius", 0.0625
+            "~mecanum_drive/wheel_radius", 0.0625
         )
         wheel_separation = rospy.get_param(
-            "~motor_controller/mecanum_drive/wheel_separation", 0.354
+            "~mecanum_drive/wheel_separation", 0.354
         )
         angular_velocity_multiplier = rospy.get_param(
-            "~motor_controller/mecanum_drive/angular_velocity_multiplier", 1.76
+            "~mecanum_drive/angular_velocity_multiplier", 1.76
         )
         wheel_base = rospy.get_param(
-            "~motor_controller/mecanum_drive/wheel_base", 0.3052
+            "~mecanum_drive/wheel_base", 0.3052
         )
         wheel_geometry = (wheel_base / wheel_separation) / 2.0
     else:
         wheel_radius = rospy.get_param(
-            "~motor_controller/diff_drive/wheel_radius", 0.0625
+            "~diff_drive/wheel_radius", 0.0625
         )
         wheel_separation = rospy.get_param(
-            "~motor_controller/diff_drive/wheel_separation", 0.358
+            "~diff_drive/wheel_separation", 0.358
         )
         angular_velocity_multiplier = rospy.get_param(
-            "~motor_controller/diff_drive/angular_velocity_multiplier", 1.76
+            "~diff_drive/angular_velocity_multiplier", 1.76
         )
 
     cmd_vel_sub = rospy.Subscriber("cmd_vel", Twist, cmd_vel_callback)
 
-    wheel_states_pub = rospy.Publisher("wheel_states", WheelStates, queue_size=10)
-    if is_mecannum_wheels:
+    wheel_states_pub = rospy.Publisher("~wheel_states", WheelStates, queue_size=10)
+    if is_mecanum_wheels:
         wheel_odom_pub = rospy.Publisher(
-            "wheel_odom_mecanum", WheelOdomMecanum, queue_size=10
+            "~wheel_odom_mecanum", WheelOdomMecanum, queue_size=10
         )
     else:
-        wheel_odom_pub = rospy.Publisher("wheel_odom", WheelOdom, queue_size=10)
+        wheel_odom_pub = rospy.Publisher("~wheel_odom", WheelOdom, queue_size=10)
 
     # # service to reset odometry
-    reset_odom_srv = rospy.Service("reset_odometry", Trigger, reset_odom)
+    reset_odom_srv = rospy.Service("~reset_odometry", Trigger, reset_odom)
 
     # candle.controlMd80SetEncoderZero(ids[0])
     init()

@@ -4,11 +4,6 @@
   <arg name="mecanum_wheels" default="false"/> 
   <arg name="tf_frame_prefix" default=""/>
 
-  <rosparam command="load" file="$(find leo_bringup)/config/bldc_controller.yaml"/>
-  <group if="$(arg mecanum_wheels)">
-    <param name="motor_controller/mecanum_wheels" value="true"/>
-  </group> 
-
   <rosparam command="load" file="$(find leo_bringup)/config/firmware.yaml"/>
     
   <param if="$(arg upload_description)"
@@ -49,10 +44,10 @@
     <rosparam command="load" 
               file="$(find leo_bringup)/config/firmware_message_converter.yaml"/>
     <param name="tf_frame_prefix" value="$(arg tf_frame_prefix)"/>
-    <remap from="firmware/wheel_odom_mecanum" to="wheel_odom_mecanum"/>
-    <remap from="firmware/wheel_odom" to="wheel_odom"/>
-    <remap from="firmware/wheel_states" to="wheel_states"/>
-    <remap from="firmware/reset_odometry" to="reset_odometry"/>
+    <remap from="firmware/wheel_odom_mecanum" to="leo_bldc/wheel_odom_mecanum"/>
+    <remap from="firmware/wheel_odom" to="leo_bldc/wheel_odom"/>
+    <remap from="firmware/wheel_states" to="leo_bldc/wheel_states"/>
+    <remap from="firmware/reset_odometry" to="leo_bldc/reset_odometry"/>
   </node>
 
   <node name="leo_system"
@@ -64,6 +59,7 @@
         type="leo_bldc"
         output="screen">
     <rosparam command="load" file="$(find leo_bringup)/config/bldc_controller.yaml"/>
+    <param if="$(arg mecanum_wheels)" name="mecanum_wheels" value="true"/>
   </node>
 
   <node type="raspicam_node"
