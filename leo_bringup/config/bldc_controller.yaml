@@ -1,0 +1,21 @@
+motor_ID_RR: 60
+motor_ID_RL: 63
+motos_ID_FR: 62
+motos_ID_FL: 61
+pid: { p: 0.04 , i: 0.25 , d: 0.0 }
+max_torque: 1.5
+mecanum_wheels: false
+update_period: 10.0
+max_angular_velocity: 4.8
+max_linear_velocity: 5.0
+
+diff_drive:
+  wheel_radius: 0.0625
+  wheel_separation: 0.358
+  angular_velocity_multiplier: 1.76
+
+mecanum_drive:
+  wheel_radius: 0.0635
+  wheel_separation: 0.354
+  wheel_base: 0.3052
+  angular_velocity_multiplier: 1.0

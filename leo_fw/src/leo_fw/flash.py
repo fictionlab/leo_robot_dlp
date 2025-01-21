@@ -169,7 +169,7 @@ def flash_firmware(
         if board_type == BoardType.CORE2:
             firmware_version = "2.1.1"
         elif board_type == BoardType.LEOCORE:
-            firmware_version = "1.2.1"
+            firmware_version = "1.2.1-motors_disabled"
 
     print(f"Current firmware version: {current_firmware_version}")
     print(f"Version of the firmware to flash: {firmware_version}")

@@ -14,6 +14,8 @@ install(
 )
 
 catkin_install_python(
-  PROGRAMS scripts/leo_system
+  PROGRAMS 
+    scripts/leo_system
+    scripts/leo_bldc
   DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION}
 )

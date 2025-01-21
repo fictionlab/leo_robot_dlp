@@ -49,5 +49,5 @@ jobs:
           CLANG_TIDY: true
           CATKIN_LINT: true
           PYLINT_CHECK: true
-          PYLINT_ARGS: '--rcfile=src/leo_robot/.pylintrc'
+          PYLINT_ARGS: '--rcfile=src/leo_robot_dlp/.pylintrc'
           PYLINT_EXCLUDE: 'setup.py'
