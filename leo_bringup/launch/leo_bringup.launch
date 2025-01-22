@@ -59,7 +59,7 @@
         type="leo_bldc"
         output="screen">
     <rosparam command="load" file="$(find leo_bringup)/config/bldc_controller.yaml"/>
-    <param if="$(arg mecanum_wheels)" name="mecanum_wheels" value="true"/>
+    <param name="mecanum_wheels" value="$(arg mecanum_wheels)"/>
   </node>
 
   <node type="raspicam_node"

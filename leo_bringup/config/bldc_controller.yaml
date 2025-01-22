@@ -2,9 +2,8 @@ motor_ID_RR: 60
 motor_ID_RL: 63
 motos_ID_FR: 62
 motos_ID_FL: 61
-pid: { p: 0.04 , i: 0.25 , d: 0.0 }
+pid: { p: 0.03 , i: 0.25 , d: 0.0 }
 max_torque: 1.5
-mecanum_wheels: false
 update_period: 10.0
 max_angular_velocity: 4.8
 max_linear_velocity: 5.0
