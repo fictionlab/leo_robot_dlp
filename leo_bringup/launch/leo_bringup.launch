@@ -56,8 +56,7 @@
 
   <node name="leo_bldc"
         pkg="leo_bringup"
-        type="leo_bldc"
-        output="screen">
+        type="leo_bldc">
     <rosparam command="load" file="$(find leo_bringup)/config/bldc_controller.yaml"/>
     <param name="mecanum_wheels" value="$(arg mecanum_wheels)"/>
   </node>
