@@ -30,7 +30,7 @@ For more information about the robot, visit [Robots/Leo Rover].
 4. Update packages.  
    Run the following command to update all system packages:  
    ```bash
-   apt update
+   sudo apt update
    ```
 5. Type the following commands to clone and build the `leo_robot_dlp` package:  
    ```bash
