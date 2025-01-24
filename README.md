@@ -45,7 +45,18 @@ For more information about the robot, visit [Robots/Leo Rover].
    ```bash
    # source /opt/ros/noetic/setup.bash
    source /home/pi/ros_ws/devel/setup.bash
-7. Restart leo.service
+   ```
+7. Install [CANdle] Python library:
+   ```bash
+   sudo apt install python3-pip
+   python3 -m pip install pyCandleMAB
+   ```
+8. Enable the [SPI] bus and reboot the system.  
+   Open the `/boot/firmware/config.txt` file and uncomment the following line:  
+   ```bash
+   dtparam=spi=on
+   ```
+9. Restart leo.service
    ```bash
    sudo systemctl restart leo.service
    ```
@@ -56,3 +67,6 @@ For more information about the robot, visit [Robots/Leo Rover].
 [LeoOS]: https://docs.fictionlab.pl/leo-rover/guides/software-update
 [ssh]: https://docs.fictionlab.pl/leo-rover/guides/ssh
 [Internet]: https://docs.fictionlab.pl/leo-rover/guides/connect-to-network
+[CANdle]: https://mabrobotics.github.io/MD80-x-CANdle-Documentation/software_package/Candle%20Python%20library.html
+[SPI]: https://mabrobotics.github.io/MD80-x-CANdle-Documentation/candle_and_candle_hat/Using%20CANdle.html
+
