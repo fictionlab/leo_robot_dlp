@@ -16,7 +16,6 @@ The custom leo_robot_dlp package is based on [leo_robot] package.
 Visit each package's ROS Wiki page for more information. \
 For more information about the robot, visit [Robots/Leo Rover].
 
-## Instalation Guide
 
 ## Installation Guide
 
