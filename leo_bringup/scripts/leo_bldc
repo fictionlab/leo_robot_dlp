@@ -220,7 +220,6 @@ try:
     motorFL = rospy.get_param("~motor_ID_FL", 61)
 
     is_mecanum_wheels = rospy.get_param("~mecanum_wheels", True)
-    print(is_mecanum_wheels)
     max_torque = rospy.get_param("~max_torque", 1.5)
     max_linear_velocity = rospy.get_param("~max_linear_velocity", 1.2)
     max_angular_velocity = rospy.get_param(
@@ -228,7 +227,6 @@ try:
     )
 
     pid = rospy.get_param("~pid", {"p": 0.01, "i": 0.25, "d": 0.0})
-    print(pid)
 
     if is_mecanum_wheels:
         wheel_radius = rospy.get_param(
@@ -265,10 +263,8 @@ try:
     else:
         wheel_odom_pub = rospy.Publisher("~wheel_odom", WheelOdom, queue_size=10)
 
-    # # service to reset odometry
     reset_odom_srv = rospy.Service("~reset_odometry", Trigger, reset_odom)
 
-    # candle.controlMd80SetEncoderZero(ids[0])
     init()
 
     rospy.loginfo("leo_bldc node started!")
